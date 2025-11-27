@@ -1,0 +1,180 @@
+{
+  "name": "work-track",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -128
+      ],
+      "id": "9ff6de57-94d7-4d8d-b9c1-16e49d1dd8bd",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openrouteservice.org/v2/directions/driving-car",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "start",
+              "value": "9.718202071325848,47.56022679095234"
+            },
+            {
+              "name": "end",
+              "value": "9.533354288314555,47.206588682434536"
+            },
+            {
+              "name": "api_key",
+              "value": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -144,
+        -128
+      ],
+      "id": "f312074e-b69d-420f-96e3-ef9b061fe8d7",
+      "name": "HTTP Request",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const jsonData = JSON.parse($json.data);\n\nconst duration = jsonData.features[0].properties.segments[0].duration;\nconst average = 2760; // deine durchschnittliche Fahrtzeit (Sekunden)\nconst deviation = ((duration - average) / average) * 100;\n\nreturn {\n  duration,\n  average,\n  deviation,\n  alert: deviation > 10\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -128
+      ],
+      "id": "48d01a9c-1c26-4676-9c79-e52815011719",
+      "name": "Code in JavaScript",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5b113e94-acf4-4230-a2a4-ecf0ec0edb07",
+              "leftValue": "=Value1 {{ $json.alert }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        -128
+      ],
+      "id": "14ebf179-b7eb-4955-b245-4b5c914846b4",
+      "name": "If",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "fromEmail": "m.nentwig98@web.de",
+        "toEmail": "m.nentwig98@web.de",
+        "subject": "Verkehrsalarm: Fahrtzeit heute erhöht",
+        "emailFormat": "text",
+        "text": "=Die aktuelle Fahrtzeit von Lindau → Eschen ist erhöht.\n\nAktuelle Zeit: {{$json.duration / 60 | round}} min  \nDurchschnitt: {{$json.average / 60 | round}} min  \nAbweichung: {{$json.deviation | round}} %\n\nEmpfehlung: Früh losfahren.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        -224
+      ],
+      "id": "65de00fa-e247-4b1f-b93d-ad1d089966ee",
+      "name": "Send email",
+      "webhookId": "427e3e69-da94-4f13-938e-2a2b06c0d24c",
+      "credentials": {
+        "smtp": {
+          "id": "EEV67vC7UbTTtSDo",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a309c099-64cf-4ab3-84e1-a739756e36dc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e4b03dff6f8fa662ccfc22b1388aa4142cffe982251c34d48b802c18d54aad2f"
+  },
+  "id": "MXzrrN5wLmHD0eYZ",
+  "tags": []
+}
